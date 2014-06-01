@@ -226,6 +226,7 @@ static void updatewindowtype(Client *c);
 static void updatetitle(Client *c);
 static void updatewmhints(Client *c);
 static void view(const Arg *arg);
+static void viewnext(const Arg *arg);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
@@ -1967,6 +1968,43 @@ view(const Arg *arg) {
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
 	focus(NULL);
 	arrange(selmon);
+}
+
+
+void
+viewnext(const Arg *arg) {
+	// we skip the seltags toggl because it violates the whole "keep
+	// looping" construct. This is unfortunate though. I should probably
+	// just save where I was, but it seems like a waste either way.
+
+//	selmon->seltags ^= 1; // toggle!
+
+	int i = 0;
+	for (i = 0; i < LENGTH(tags); i++) {
+		selmon->tagset[selmon->seltags] = \
+			TAGMASK & (selmon->tagset[selmon->seltags] << 1);
+
+		if (selmon->tagset[selmon->seltags] < 1)
+			selmon->tagset[selmon->seltags] = 1;
+
+		focus(NULL);
+
+		if (selmon->sel != NULL) break;
+	}
+
+	if (i == LENGTH(tags)) {
+		// no other clients
+		selmon->tagset[selmon->seltags] = TAGMASK & (selmon->tagset[selmon->seltags] << 1);
+		if (selmon->tagset[selmon->seltags] < 1)
+			selmon->tagset[selmon->seltags] = 1;
+	}
+
+
+	arrange(selmon);
+
+	// debug
+	/* printf("selmon->tagset[selmon->seltags][%x]: selmon->clients[%p], selmon->sel[%p], selmon->stack[%p]\n", */
+	/*        selmon->tagset[selmon->seltags], (void *)selmon->clients, (void *)selmon->sel, (void *)selmon->stack); */
 }
 
 Client *
